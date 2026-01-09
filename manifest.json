@@ -2,7 +2,7 @@
   "name": "Excel 转高清图片",
   "short_name": "Excel转图片",
   "description": "将 Excel 文件转换为高清 PNG 图片",
-  "start_url": "/",
+  "start_url": "/index.html",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#3498db",
