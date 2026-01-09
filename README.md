@@ -127,4 +127,4 @@ excelToPic/
 - GitHub Pages
 - Vercel
 - Netlify
-- Cloudflare Pages
+- Cloudflare Pages# excel-

@@ -23,7 +23,7 @@
 
    ```bash
    # 添加 Gitee 远程仓库
-   git remote add origin https://gitee.com/yourusername/excel-to-image.git
+   git remote add origin https://gitee.com/yanyanhenxian/excel-to-image-conversion
    
    # 推送代码到 Gitee
    git push -u origin main

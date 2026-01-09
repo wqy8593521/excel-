@@ -22,10 +22,7 @@
 
    ```bash
    # 添加 GitHub 远程仓库
-   git remote add origin https://github.com/yourusername/excel-to-image.git
-   
-   # 推送代码到 GitHub
-   git push -u origin main
+c
    ```
 
 ## 步骤 3：启用 GitHub Pages
