@@ -1,0 +1,53 @@
+{
+  "name": "Excel 转高清图片",
+  "short_name": "Excel转图片",
+  "description": "将 Excel 文件转换为高清 PNG 图片",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3498db",
+  "icons": [
+    {
+      "src": "https://neeko-copilot.bytedance.net/api/text2image?prompt=Excel%20to%20image%20converter%20app%20icon%2C%20modern%20flat%20design%2C%20blue%20color%20scheme&image_size=square",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://neeko-copilot.bytedance.net/api/text2image?prompt=Excel%20to%20image%20converter%20app%20icon%2C%20modern%20flat%20design%2C%20blue%20color%20scheme&image_size=square_hd",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["productivity", "utilities"],
+  "orientation": "portrait",
+  "scope": "/",
+  "shortcuts": [
+    {
+      "name": "转换 Excel",
+      "short_name": "转换",
+      "description": "转换 Excel 文件为图片",
+      "url": "/?action=convert",
+      "icons": [
+        {
+          "src": "https://neeko-copilot.bytedance.net/api/text2image?prompt=Excel%20file%20icon%2C%20simple%20flat%20design&image_size=square",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ],
+  "file_handlers": [
+    {
+      "action": "/?file=",
+      "accept": {
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
+        "application/vnd.ms-excel": [".xls"]
+      }
+    }
+  ],
+  "launch_handler": {
+    "route_to": "new-client",
+    "navigate_existing_client": "never"
+  }
+}

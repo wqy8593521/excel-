@@ -1,0 +1,1 @@
+{"shortcut":"actions":[{"WFWorkflowActionIdentifier":"is.workflow.actions.gettext","WFWorkflowActionParameters":{"WFText":"https://your-deployed-site.com"}}]}  // 简化版，需要在 iOS 中编辑完整配置

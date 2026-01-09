@@ -1,0 +1,266 @@
+// Excel 转图片工具 - JSBox 脚本
+// 适用于 iOS 端一键转换
+
+// 主函数
+function main() {
+  // 检查是否通过分享打开
+  if ($context.inputItems && $context.inputItems.length > 0) {
+    const inputItem = $context.inputItems[0];
+    if (inputItem.type === 'file') {
+      handleSharedFile(inputItem.path);
+      return;
+    }
+  }
+  
+  // 正常打开，显示文件选择器
+  showFilePicker();
+}
+
+// 显示文件选择器
+function showFilePicker() {
+  $ui.alert({
+    title: 'Excel 转图片',
+    message: '请从其他应用分享 Excel 文件到本脚本',
+    actions: [
+      {
+        title: '确定'
+      }
+    ]
+  });
+}
+
+// 处理分享的文件
+function handleSharedFile(filePath) {
+  const fileName = $path.basename(filePath);
+  if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+    handleExcelFile(filePath);
+  } else {
+    $ui.alert({
+      title: '错误',
+      message: '请分享 Excel 文件（.xlsx 或 .xls）',
+      actions: [
+        {
+          title: '确定'
+        }
+      ]
+    });
+  }
+}
+
+// 处理 Excel 文件
+function handleExcelFile(filePath) {
+  $ui.loading('正在处理文件...');
+  
+  // 这里需要使用 SheetJS 库来解析 Excel 文件
+  // 由于 JSBox 环境限制，我们使用网页视图来处理
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>Excel 转图片</title>
+      <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 20px; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+      </style>
+    </head>
+    <body>
+      <div id="container"></div>
+      <script>
+        // 接收文件数据
+        function processExcel(data) {
+          try {
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+            const htmlTable = XLSX.utils.sheet_to_html(worksheet);
+            
+            document.getElementById('container').innerHTML = htmlTable;
+            
+            // 生成图片
+            setTimeout(() => {
+              const table = document.querySelector('table');
+              html2canvas(table, {
+                scale: 3,
+                useCORS: true,
+                backgroundColor: '#ffffff'
+              }).then(canvas => {
+                // 将图片转换为 base64
+                const base64 = canvas.toDataURL('image/png');
+                // 发送结果回 JSBox
+                window.webkit.messageHandlers.jsbox.postMessage({ base64: base64 });
+              });
+            }, 100);
+          } catch (error) {
+            window.webkit.messageHandlers.jsbox.postMessage({ error: error.message });
+          }
+        }
+      </script>
+    </body>
+    </html>
+  `;
+  
+  // 创建临时 HTML 文件
+  const htmlPath = $path.join($path.temp(), 'excel-converter.html');
+  $file.write({ 
+    data: html, 
+    path: htmlPath 
+  });
+  
+  // 读取 Excel 文件数据
+  const excelData = $file.read({ 
+    path: filePath, 
+    encoding: 'binary' 
+  });
+  const base64Excel = btoa(excelData);
+  
+  // 创建网页视图
+  $ui.webView({
+    url: `file://${htmlPath}`,
+    scripts: {
+      didFinish: function() {
+        // 注入 Excel 数据并处理
+        this.evaluateJavaScript(`
+          // 解码 base64 数据
+          function base64ToArrayBuffer(base64) {
+            const binaryString = window.atob(base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+              bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+          }
+          
+          // 处理 Excel 数据
+          const excelData = base64ToArrayBuffer('${base64Excel}');
+          processExcel(excelData);
+        `);
+      }
+    },
+    messageHandler: function(msg) {
+      $ui.loading(false);
+      
+      if (msg.error) {
+        $ui.alert({
+          title: '错误',
+          message: `处理失败: ${msg.error}`,
+          actions: [
+            {
+              title: '确定'
+            }
+          ]
+        });
+      } else if (msg.base64) {
+        handleImageResult(msg.base64);
+      }
+    }
+  });
+}
+
+// 处理生成的图片
+function handleImageResult(base64) {
+  // 移除 base64 前缀
+  const base64Data = base64.replace(/^data:image\/png;base64,/, '');
+  
+  // 保存图片到临时文件
+  const tempPath = $path.join($path.temp(), 'excel-to-image.png');
+  $file.write({ 
+    data: base64Data, 
+    path: tempPath,
+    encoding: 'base64'
+  });
+  
+  // 显示保存和分享选项
+  $ui.alert({
+    title: '转换完成',
+    message: '图片已生成，您可以保存或分享',
+    actions: [
+      {
+        title: '保存到相册',
+        handler: () => {
+          saveToPhotos(tempPath);
+        }
+      },
+      {
+        title: '分享图片',
+        handler: () => {
+          shareImage(tempPath);
+        }
+      },
+      {
+        title: '取消',
+        style: 'cancel'
+      }
+    ]
+  });
+}
+
+// 保存图片到相册
+function saveToPhotos(imagePath) {
+  $ui.loading('保存中...');
+  
+  // 使用 JSBox 的相册 API
+  $photo.save({ 
+    path: imagePath,
+    handler: function(success) {
+      $ui.loading(false);
+      if (success) {
+        $ui.alert({
+          title: '成功',
+          message: '图片已保存到相册',
+          actions: [
+            {
+              title: '确定'
+            }
+          ]
+        });
+      } else {
+        $ui.alert({
+          title: '错误',
+          message: '保存失败，请重试',
+          actions: [
+            {
+              title: '确定'
+            }
+          ]
+        });
+      }
+    }
+  });
+}
+
+// 分享图片
+function shareImage(imagePath) {
+  $share.share({
+    items: [
+      {
+        type: 'file',
+        path: imagePath
+      }
+    ],
+    handler: (success) => {
+      if (success) {
+        $ui.alert({
+          title: '成功',
+          message: '图片分享成功',
+          actions: [
+            {
+              title: '确定'
+            }
+          ]
+        });
+      }
+    }
+  });
+}
+
+// 运行主函数
+main();

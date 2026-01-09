@@ -1,0 +1,61 @@
+{
+  "WFWorkflowIcon": {
+    "WFWorkflowIconStartColor": 4292697087,
+    "WFWorkflowIconGlyphNumber": 61441
+  },
+  "WFWorkflowInputContentItemClasses": [
+    "WFImageContentItem",
+    "WFStringContentItem",
+    "WFURLContentItem",
+    "WFGenericFileContentItem"
+  ],
+  "WFWorkflowActions": [
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.getinput",
+      "WFWorkflowActionParameters": {
+        "WFInputContentItemClasses": [
+          "WFGenericFileContentItem"
+        ],
+        "WFMultipleItems": false
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.conditional",
+      "WFWorkflowActionParameters": {
+        "WFElseAction": {
+          "WFWorkflowActionIdentifier": "is.workflow.actions.notification",
+          "WFWorkflowActionParameters": {
+            "WFNotificationActionTitle": "错误",
+            "WFNotificationActionBody": "请选择 Excel 文件",
+            "WFNotificationActionSound": false
+          }
+        },
+        "WFIfElseString": "{{ShortcutInput.Path}} ends with '.xlsx' or {{ShortcutInput.Path}} ends with '.xls'",
+        "WFThenAction": {
+          "WFWorkflowActionIdentifier": "is.workflow.actions.runjavascriptonwebpage",
+          "WFWorkflowActionParameters": {
+            "WFJavaScript": "const html = `<!DOCTYPE html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>Excel 转图片</title><script src=\"https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js\"></script><script src=\"https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js\"></script><style>body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 20px; } table { border-collapse: collapse; width: 100%; } th, td { border: 1px solid #ddd; padding: 8px; text-align: left; } th { background-color: #f2f2f2; } tr:nth-child(even) { background-color: #f9f9f9; }</style></head><body><div id=\"container\"></div><script>function processExcel(data) { try { const workbook = XLSX.read(data, { type: 'array' }); const firstSheetName = workbook.SheetNames[0]; const worksheet = workbook.Sheets[firstSheetName]; const htmlTable = XLSX.utils.sheet_to_html(worksheet); document.getElementById('container').innerHTML = htmlTable; setTimeout(() => { const table = document.querySelector('table'); html2canvas(table, { scale: 3, useCORS: true, backgroundColor: '#ffffff' }).then(canvas => { const base64 = canvas.toDataURL('image/png'); window.webkit.messageHandlers.jsbox.postMessage({ base64: base64 }); }); }, 100); } catch (error) { window.webkit.messageHandlers.jsbox.postMessage({ error: error.message }); } }</script></body></html>`; document.write(html);"
+          }
+        }
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.savephoto",
+      "WFWorkflowActionParameters": {
+        "WFPhotoAlbumName": ""
+      }
+    },
+    {
+      "WFWorkflowActionIdentifier": "is.workflow.actions.notification",
+      "WFWorkflowActionParameters": {
+        "WFNotificationActionTitle": "转换完成",
+        "WFNotificationActionBody": "图片已保存到相册",
+        "WFNotificationActionSound": true
+      }
+    }
+  ],
+  "WFWorkflowSubcategory": "documents",
+  "WFWorkflowName": "Excel转图片",
+  "WFWorkflowDescription": "将 Excel 文件转换为高清图片并保存到相册",
+  "WFWorkflowInputClass": "WFContentItemClass"
+}
